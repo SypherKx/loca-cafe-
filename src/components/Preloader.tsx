@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// We only wait for the first few frames to ensure the animation starts smoothly
-// The rest will continue loading in the background within the ScrollCanvas
-const CRITICAL_FRAME_COUNT = 24; 
-const frameUrls = Array.from({ length: CRITICAL_FRAME_COUNT }).map((_, i) => 
-  `/frames_webp/frame_${String(i).padStart(5, '0')}.webp`
-);
-
 const staticAssets = [
   '/logo.png',
+  '/hero-video.mp4',
 ];
 
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
@@ -18,7 +12,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
   useEffect(() => {
     let loadedCount = 0;
-    const allAssets = [...frameUrls, ...staticAssets];
+    const allAssets = [...staticAssets];
     const totalAssets = allAssets.length;
 
     if (totalAssets === 0) {
@@ -40,10 +34,17 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
     };
 
     allAssets.forEach((url) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = updateProgress;
-      img.onerror = updateProgress;
+      if (url.endsWith('.mp4')) {
+        // Preload video using fetch so it is cached in the browser
+        fetch(url)
+          .then(updateProgress)
+          .catch(updateProgress);
+      } else {
+        const img = new Image();
+        img.src = url;
+        img.onload = updateProgress;
+        img.onerror = updateProgress;
+      }
     });
   }, [onComplete]);
 

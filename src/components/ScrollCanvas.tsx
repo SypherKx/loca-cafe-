@@ -8,139 +8,46 @@ import { motion } from 'framer-motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FRAME_COUNT = 192;
-
-function currentFrame(index: number): string {
-  return `/frames_webp/frame_${String(index).padStart(5, '0')}.webp`;
-}
-
 export default function ScrollCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const initialCTARef = useRef<HTMLDivElement>(null);
-  const imagesRef = useRef<HTMLImageElement[]>([]);
-  const frameIndexRef = useRef({ value: 0 });
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const video = videoRef.current;
     const container = containerRef.current;
-    if (!canvas || !container) return;
+    if (!video || !container) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    video.muted = true;
+    video.playsInline = true;
 
-    // Pre-load all frames
-    const images: HTMLImageElement[] = [];
-    let loadedCount = 0;
+    // Smooth video seeking variables
+    let targetTime = 0;
+    let actualTime = 0;
+    const ease = 0.08; // Interpolation factor (higher = faster response, lower = smoother seeking)
 
-    // Adaptive resolution based on device — cap at 2x to avoid memory pressure on high-DPI mobile screens
-    const setCanvasSize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2); 
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'medium'; // Medium is often faster for mobile while maintaining quality
-    };
-    setCanvasSize();
-
-    const renderFrame = (index: number) => {
-      const img = images[index];
-      if (!img || !img.complete) return;
-
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-
-      ctx.clearRect(0, 0, w, h);
-
-      const imgRatio = img.naturalWidth / img.naturalHeight;
-      const canvasRatio = w / h;
-
-      let drawW: number, drawH: number, drawX: number, drawY: number;
-      if (canvasRatio > imgRatio) {
-        drawW = w;
-        drawH = w / imgRatio;
-        drawX = 0;
-        drawY = (h - drawH) / 2;
-      } else {
-        drawH = h;
-        drawW = h * imgRatio;
-        drawX = (w - drawW) / 2;
-        drawY = 0;
-      }
-
-      ctx.drawImage(img, drawX, drawY, drawW, drawH);
-    };
-
-    // Prioritized pre-loading and decoding
-    const loadImages = async () => {
-      // Create empty slots
-      for (let i = 0; i < FRAME_COUNT; i++) {
-        images[i] = new Image();
-      }
-
-      // Load first 24 frames with highest priority to match Preloader
-      // This ensures that when the loader disappears, the start of the animation is buttery smooth
-      const CRITICAL_FRAMES = 24;
-      const priorityPromises = Array.from({ length: CRITICAL_FRAMES }).map((_, i) => {
-        return new Promise<void>((resolve) => {
-          images[i].src = currentFrame(i);
-          images[i].onload = () => {
-            if (i === 0) renderFrame(0);
-            images[i].decode().then(() => resolve()).catch(() => resolve());
-          };
-          images[i].onerror = () => resolve();
-        });
-      });
-
-      await Promise.all(priorityPromises);
-
-      // Load the rest in optimized batches
-      const batchSize = 30;
-      for (let i = CRITICAL_FRAMES; i < FRAME_COUNT; i += batchSize) {
-        const batchPromises = [];
-        for (let j = i; j < Math.min(i + batchSize, FRAME_COUNT); j++) {
-          images[j].src = currentFrame(j);
-          // We don't strictly await EVERY batch to keep the UI fluid, 
-          // but we give them a chance to start.
-        }
-        // Small delay to allow browser to handle rendering/scrolling
-        await new Promise(r => setTimeout(r, 60));
-      }
-    };
-
-    loadImages();
-    imagesRef.current = images;
-
-    // GSAP ScrollTrigger animation
-    const frameObj = frameIndexRef.current;
-
+    // GSAP ScrollTrigger timeline
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container,
         start: 'top top',
-        end: '+=300%',
-        scrub: 1, // Smoother scrub
+        end: '+=300%', // Pin screen height for 3 viewports
+        scrub: 1, // Smoother timelines
         pin: true,
         anticipatePin: 1,
       },
     });
 
-    // Animate through frames
-    tl.to(frameObj, {
-      value: FRAME_COUNT - 1,
+    const scrollProgress = { value: 0 };
+    tl.to(scrollProgress, {
+      value: 1,
       ease: 'none',
       duration: 3,
-      snap: { value: 1 },
       onUpdate: () => {
-        renderFrame(Math.round(frameObj.value));
+        if (video.duration) {
+          targetTime = scrollProgress.value * video.duration;
+        }
       },
     });
 
@@ -158,17 +65,14 @@ export default function ScrollCanvas() {
     // Overlay animations — fade in main content as we scroll further
     const overlay = overlayRef.current;
     if (overlay) {
-      // Initial state — content starts hidden
       gsap.set(overlay, { opacity: 0 });
 
-      // At ~40% through the frames, start fading in overlay
       tl.to(overlay, {
         opacity: 1,
         duration: 0.8,
         ease: 'power2.out',
       }, 0.8);
 
-      // Stagger text elements in
       const textEls = overlay.querySelectorAll('.hero-animate');
       gsap.set(textEls, { y: 60, opacity: 0 });
       tl.to(textEls, {
@@ -180,26 +84,39 @@ export default function ScrollCanvas() {
       }, 1.0);
     }
 
-    // Handle resize
-    const handleResize = () => {
-      setCanvasSize();
-      renderFrame(Math.round(frameObj.value));
+    // requestAnimationFrame loop to smoothly interpolate (lerp) video seeking
+    let animationFrameId: number;
+    const updateLoop = () => {
+      if (Math.abs(actualTime - targetTime) > 0.001) {
+        actualTime = actualTime + (targetTime - actualTime) * ease;
+        if (video.duration) {
+          if (actualTime < 0) actualTime = 0;
+          if (actualTime > video.duration) actualTime = video.duration;
+          video.currentTime = actualTime;
+        }
+      }
+      animationFrameId = requestAnimationFrame(updateLoop);
     };
-    window.addEventListener('resize', handleResize);
+    animationFrameId = requestAnimationFrame(updateLoop);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, []);
 
   return (
     <section ref={containerRef} className="relative w-full h-screen overflow-hidden bg-[#1B110A]">
-      {/* Canvas for frame animation */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
+      {/* Video for scroll scrubbing */}
+      <video
+        ref={videoRef}
+        src="/hero-video.mp4"
+        className="absolute inset-0 w-full h-full object-cover"
         style={{ display: 'block' }}
+        preload="auto"
+        muted
+        playsInline
+        webkit-playsinline="true"
       />
 
       {/* Dark gradient overlay for text readability */}
@@ -355,6 +272,5 @@ export default function ScrollCanvas() {
         </div>
       </div>
     </section>
-
   );
 }
