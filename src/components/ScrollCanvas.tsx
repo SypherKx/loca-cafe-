@@ -8,114 +8,198 @@ import { motion } from 'framer-motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const FRAME_COUNT = 192;
+
+function currentFrame(index: number): string {
+  return `/frames_webp/frame_${String(index).padStart(5, '0')}.webp`;
+}
+
 export default function ScrollCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const initialCTARef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const initialCTARef = useRef<HTMLDivElement>(null);
+  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const frameIndexRef = useRef({ value: 0 });
 
   useEffect(() => {
-    const video = videoRef.current;
+    const canvas = canvasRef.current;
     const container = containerRef.current;
-    if (!video || !container) return;
+    if (!canvas || !container) return;
 
-    // Standard video configuration for scroll-scrubbing
-    video.muted = true;
-    video.playsInline = true;
-    video.controls = false;
-    video.pause();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    let tl: gsap.core.Timeline | null = null;
+    // Pre-load all frames
+    const images: HTMLImageElement[] = [];
+    let loadedCount = 0;
 
-    const setupTimeline = () => {
-      const duration = video.duration;
-      if (!duration || isNaN(duration)) return;
+    // Adaptive resolution based on device — cap at 2x to avoid memory pressure on high-DPI mobile screens
+    const setCanvasSize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2); 
+      const w = window.innerWidth;
+      const h = window.innerHeight;
 
-      // Reset video start position
-      video.currentTime = 0;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // GSAP ScrollTrigger timeline
-      tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: container,
-          start: 'top top',
-          end: '+=300%', // Pin screen height for 3 viewports
-          scrub: 1.5, // Eased scrub timing
-          pin: true,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-        },
-      });
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'medium'; // Medium is often faster for mobile while maintaining quality
+    };
+    setCanvasSize();
 
-      // Animate video playback currentTime directly on the timeline
-      tl.to(video, {
-        currentTime: duration,
-        ease: 'none',
-        duration: 3,
-      }, 0);
+    const renderFrame = (index: number) => {
+      const img = images[index];
+      if (!img || !img.complete) return;
 
-      // Initial CTA animation — fade out and move up as we scroll
-      const initialCTA = initialCTARef.current;
-      if (initialCTA) {
-        tl.to(initialCTA, {
-          opacity: 0,
-          y: -150,
-          duration: 0.8,
-          ease: 'power2.inOut',
-        }, 0);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      const canvasRatio = w / h;
+
+      let drawW: number, drawH: number, drawX: number, drawY: number;
+      if (canvasRatio > imgRatio) {
+        drawW = w;
+        drawH = w / imgRatio;
+        drawX = 0;
+        drawY = (h - drawH) / 2;
+      } else {
+        drawH = h;
+        drawW = h * imgRatio;
+        drawX = (w - drawW) / 2;
+        drawY = 0;
       }
 
-      // Overlay animations — fade in main content as we scroll further
-      const overlay = overlayRef.current;
-      if (overlay) {
-        gsap.set(overlay, { opacity: 0 });
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    };
 
-        tl.to(overlay, {
-          opacity: 1,
-          duration: 0.8,
-          ease: 'power2.out',
-        }, 0.8);
+    // Prioritized pre-loading and decoding
+    const loadImages = async () => {
+      // Create empty slots
+      for (let i = 0; i < FRAME_COUNT; i++) {
+        images[i] = new Image();
+      }
 
-        const textEls = overlay.querySelectorAll('.hero-animate');
-        gsap.set(textEls, { y: 60, opacity: 0 });
-        tl.to(textEls, {
-          y: 0,
-          opacity: 1,
-          stagger: 0.15,
-          duration: 0.6,
-          ease: 'power3.out',
-        }, 1.0);
+      // Load first 24 frames with highest priority to match Preloader
+      // This ensures that when the loader disappears, the start of the animation is buttery smooth
+      const CRITICAL_FRAMES = 24;
+      const priorityPromises = Array.from({ length: CRITICAL_FRAMES }).map((_, i) => {
+        return new Promise<void>((resolve) => {
+          images[i].src = currentFrame(i);
+          images[i].onload = () => {
+            if (i === 0) renderFrame(0);
+            images[i].decode().then(() => resolve()).catch(() => resolve());
+          };
+          images[i].onerror = () => resolve();
+        });
+      });
+
+      await Promise.all(priorityPromises);
+
+      // Load the rest in optimized batches
+      const batchSize = 30;
+      for (let i = CRITICAL_FRAMES; i < FRAME_COUNT; i += batchSize) {
+        const batchPromises = [];
+        for (let j = i; j < Math.min(i + batchSize, FRAME_COUNT); j++) {
+          images[j].src = currentFrame(j);
+          // We don't strictly await EVERY batch to keep the UI fluid, 
+          // but we give them a chance to start.
+        }
+        // Small delay to allow browser to handle rendering/scrolling
+        await new Promise(r => setTimeout(r, 60));
       }
     };
 
-    // If metadata is already loaded (from preloader cache), init immediately
-    if (video.readyState >= 1) {
-      setupTimeline();
-    } else {
-      video.addEventListener('loadedmetadata', setupTimeline);
+    loadImages();
+    imagesRef.current = images;
+
+    // GSAP ScrollTrigger animation
+    const frameObj = frameIndexRef.current;
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: container,
+        start: 'top top',
+        end: '+=300%',
+        scrub: 1, // Smoother scrub
+        pin: true,
+        anticipatePin: 1,
+      },
+    });
+
+    // Animate through frames
+    tl.to(frameObj, {
+      value: FRAME_COUNT - 1,
+      ease: 'none',
+      duration: 3,
+      snap: { value: 1 },
+      onUpdate: () => {
+        renderFrame(Math.round(frameObj.value));
+      },
+    });
+
+    // Initial CTA animation — fade out and move up as we scroll
+    const initialCTA = initialCTARef.current;
+    if (initialCTA) {
+      tl.to(initialCTA, {
+        opacity: 0,
+        y: -150,
+        duration: 0.8,
+        ease: 'power2.inOut',
+      }, 0);
     }
 
+    // Overlay animations — fade in main content as we scroll further
+    const overlay = overlayRef.current;
+    if (overlay) {
+      // Initial state — content starts hidden
+      gsap.set(overlay, { opacity: 0 });
+
+      // At ~40% through the frames, start fading in overlay
+      tl.to(overlay, {
+        opacity: 1,
+        duration: 0.8,
+        ease: 'power2.out',
+      }, 0.8);
+
+      // Stagger text elements in
+      const textEls = overlay.querySelectorAll('.hero-animate');
+      gsap.set(textEls, { y: 60, opacity: 0 });
+      tl.to(textEls, {
+        y: 0,
+        opacity: 1,
+        stagger: 0.15,
+        duration: 0.6,
+        ease: 'power3.out',
+      }, 1.0);
+    }
+
+    // Handle resize
+    const handleResize = () => {
+      setCanvasSize();
+      renderFrame(Math.round(frameObj.value));
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
-      video.removeEventListener('loadedmetadata', setupTimeline);
-      if (tl) {
-        tl.kill();
-      }
+      window.removeEventListener('resize', handleResize);
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, []);
 
   return (
     <section ref={containerRef} className="relative w-full h-screen overflow-hidden bg-[#1B110A]">
-      {/* Video for scroll scrubbing */}
-      <video
-        ref={videoRef}
-        src="/hero-video.mp4"
-        className="absolute inset-0 w-full h-full object-cover"
+      {/* Canvas for frame animation */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
         style={{ display: 'block' }}
-        preload="auto"
-        muted
-        playsInline
-        webkit-playsinline="true"
       />
 
       {/* Dark gradient overlay for text readability */}
@@ -271,5 +355,6 @@ export default function ScrollCanvas() {
         </div>
       </div>
     </section>
+
   );
 }
