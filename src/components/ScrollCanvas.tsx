@@ -8,10 +8,10 @@ import { motion } from 'framer-motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FRAME_COUNT = 96;
+const FRAME_COUNT = 48;
 
 function currentFrame(index: number): string {
-  const actualIndex = Math.min(index * 2, 191);
+  const actualIndex = Math.min(index * 4, 191);
   return `/frames_webp/frame_${String(actualIndex).padStart(5, '0')}.webp`;
 }
 
@@ -124,69 +124,15 @@ export default function ScrollCanvas() {
       drawToCanvas(drawable);
     };
 
-    // Virtualized loading window - only keep frames near the active index loaded
+    // Since all 48 frames are pre-loaded on startup, we do not need dynamic scroll-time allocation
     const frameObj = frameIndexRef.current;
     const manageFrames = (current: number) => {
-      const PRE_WINDOW = isMobile ? 8 : 15;
-      const POST_WINDOW = isMobile ? 16 : 25;
-      
-      const start = Math.max(0, current - PRE_WINDOW);
-      const end = Math.min(FRAME_COUNT - 1, current + POST_WINDOW);
-
-      // Load frames inside sliding window
-      for (let i = start; i <= end; i++) {
-        if (!images[i]) {
-          const img = new Image();
-          images[i] = img;
-          img.onload = () => {
-            if (supportsBitmap) {
-              createImageBitmap(img).then(bitmap => {
-                bitmaps[i] = bitmap;
-                const activeFrame = Math.round(frameObj.value);
-                if (activeFrame === i) {
-                  latestTargetFrame = i;
-                }
-              }).catch(() => {
-                const activeFrame = Math.round(frameObj.value);
-                if (activeFrame === i) {
-                  latestTargetFrame = i;
-                }
-              });
-            } else {
-              const activeFrame = Math.round(frameObj.value);
-              if (activeFrame === i) {
-                latestTargetFrame = i;
-              }
-            }
-          };
-          img.src = currentFrame(i);
-        }
-      }
-
-      // Unload frames outside sliding window to free up GPU memory
-      for (let i = 0; i < FRAME_COUNT; i++) {
-        if ((i < start || i > end) && images[i]) {
-          // Retain first 24 frames near top for instant load back
-          if (current < 12 && i < 24) {
-            continue;
-          }
-          
-          // Close ImageBitmap to free GPU texture memory immediately
-          if (bitmaps[i]) {
-            bitmaps[i]!.close();
-            bitmaps[i] = null;
-          }
-
-          images[i]!.onload = null;
-          images[i]!.src = ''; // Deallocates image memory in most browsers
-          images[i] = null;
-        }
-      }
+      // No-op: All frames remain in memory for instant 0ms latency scrubbing
     };
 
-    // Prioritized pre-loading and decoding of first 24 critical frames
+    // Prioritized pre-loading and decoding of all 48 frames
     const loadInitialImages = async () => {
-      const INITIAL_LOAD = 24;
+      const INITIAL_LOAD = 48;
       const priorityPromises = Array.from({ length: INITIAL_LOAD }).map((_, i) => {
         return new Promise<void>((resolve) => {
           const img = new Image();
@@ -247,7 +193,7 @@ export default function ScrollCanvas() {
       scrollTrigger: {
         trigger: container,
         start: 'top top',
-        end: '+=150%',
+        end: '+=200%',
         scrub: isMobile ? 0.5 : 1, // responsive snappiness on mobile
         pin: true,
         anticipatePin: 1,
