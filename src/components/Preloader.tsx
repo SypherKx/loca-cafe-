@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // The rest will continue loading in the background within the ScrollCanvas
 const CRITICAL_FRAME_COUNT = 24; 
 const frameUrls = Array.from({ length: CRITICAL_FRAME_COUNT }).map((_, i) => 
-  `/frames_webp/frame_${String(i).padStart(5, '0')}.webp`
+  `/frames_webp/frame_${String(i * 2).padStart(5, '0')}.webp`
 );
 
 const staticAssets = [

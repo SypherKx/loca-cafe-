@@ -8,10 +8,11 @@ import { motion } from 'framer-motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FRAME_COUNT = 192;
+const FRAME_COUNT = 96;
 
 function currentFrame(index: number): string {
-  return `/frames_webp/frame_${String(index).padStart(5, '0')}.webp`;
+  const actualIndex = Math.min(index * 2, 191);
+  return `/frames_webp/frame_${String(actualIndex).padStart(5, '0')}.webp`;
 }
 
 export default function ScrollCanvas() {
@@ -126,8 +127,8 @@ export default function ScrollCanvas() {
     // Virtualized loading window - only keep frames near the active index loaded
     const frameObj = frameIndexRef.current;
     const manageFrames = (current: number) => {
-      const PRE_WINDOW = isMobile ? 12 : 30;
-      const POST_WINDOW = isMobile ? 24 : 50;
+      const PRE_WINDOW = isMobile ? 8 : 15;
+      const POST_WINDOW = isMobile ? 16 : 25;
       
       const start = Math.max(0, current - PRE_WINDOW);
       const end = Math.min(FRAME_COUNT - 1, current + POST_WINDOW);
@@ -165,8 +166,8 @@ export default function ScrollCanvas() {
       // Unload frames outside sliding window to free up GPU memory
       for (let i = 0; i < FRAME_COUNT; i++) {
         if ((i < start || i > end) && images[i]) {
-          // Retain first 30 frames near top for instant load back
-          if (current < 15 && i < 30) {
+          // Retain first 24 frames near top for instant load back
+          if (current < 12 && i < 24) {
             continue;
           }
           
@@ -183,9 +184,9 @@ export default function ScrollCanvas() {
       }
     };
 
-    // Prioritized pre-loading and decoding of first 30 critical frames
+    // Prioritized pre-loading and decoding of first 24 critical frames
     const loadInitialImages = async () => {
-      const INITIAL_LOAD = 30;
+      const INITIAL_LOAD = 24;
       const priorityPromises = Array.from({ length: INITIAL_LOAD }).map((_, i) => {
         return new Promise<void>((resolve) => {
           const img = new Image();
