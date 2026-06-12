@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import GlobalItalianBackground from '@/components/GlobalItalianBackground';
 import { menuItems } from '@/lib/menu-data';
 import type { MenuItem } from '@/lib/store';
 
@@ -98,7 +99,8 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#efdfce] text-[#311e0c]">
+    <div className="relative min-h-screen bg-[#efdfce] text-[#311e0c] overflow-x-hidden">
+      <GlobalItalianBackground page="menu" />
       <Navbar />
 
       {/* Hero section */}

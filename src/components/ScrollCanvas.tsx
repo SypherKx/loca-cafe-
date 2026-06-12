@@ -347,11 +347,11 @@ export default function ScrollCanvas() {
 
       {/* Scroll indicator — pulsing at bottom center */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-medium" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <p className="text-[10px] uppercase tracking-[0.3em] font-medium" style={{ color: 'rgba(229, 212, 194, 0.4)' }}>
           Scroll down
         </p>
-        <div className="w-5 h-8 rounded-full border border-white/20 flex justify-center pt-1.5">
-          <div className="w-1 h-2 rounded-full bg-white/40 animate-bounce" />
+        <div className="w-5 h-8 rounded-full border border-[#e5d4c2]/25 flex justify-center pt-1.5">
+          <div className="w-1 h-2 rounded-full bg-[#e5d4c2]/60 animate-bounce" />
         </div>
       </div>
     </section>

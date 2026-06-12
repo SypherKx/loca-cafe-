@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { MapPin, Clock, Phone, Coffee } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import GlobalItalianBackground from '@/components/GlobalItalianBackground';
 import cafeInterior from '@/assets/cafe-interior.jpg';
 import handmadePasta from '@/assets/handmade-pasta.png';
 
@@ -24,7 +25,8 @@ function FadeIn({ children, className = '', delay = 0 }: { children: React.React
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background overflow-hidden">
+      <GlobalItalianBackground page="about" />
       <Navbar />
 
       <div className="container mx-auto px-4 pt-24 pb-16">

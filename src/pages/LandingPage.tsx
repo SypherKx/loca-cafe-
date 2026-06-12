@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ScrollCanvas from '@/components/ScrollCanvas';
+import GlobalItalianBackground from '@/components/GlobalItalianBackground';
 import heroCoffee from '@/assets/hero-coffee.jpg';
 import pizzaOven from '@/assets/pizza-oven.png';
 import cafeInterior from '@/assets/cafe-interior.jpg';
@@ -685,91 +686,6 @@ function CTASection() {
   );
 }
 
-function GlobalItalianBackground() {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 select-none">
-      {/* 1. Olive Branch - Top Right near Philosophy */}
-      <div className="absolute top-[12%] right-[-50px] sm:right-[2%] rotate-[45deg] opacity-[0.06]">
-        <svg viewBox="0 0 100 200" width="160" height="320" fill="none" stroke="#311e0c" strokeWidth="1.5">
-          <path d="M50 10 Q60 50 50 190" />
-          <path d="M50 30 Q30 20 25 35 Q40 45 50 42" />
-          <path d="M50 45 Q70 35 75 50 Q60 60 50 57" />
-          <path d="M50 70 Q25 60 20 75 Q35 85 50 82" />
-          <path d="M50 85 Q75 75 80 90 Q65 100 50 97" />
-          <path d="M50 110 Q30 100 25 115 Q40 125 50 122" />
-          <path d="M50 125 Q70 115 75 130 Q60 140 50 137" />
-        </svg>
-      </div>
-
-      {/* 2. Faint Text - Cucina Italiana */}
-      <div className="absolute top-[20%] left-[5%] -rotate-12 font-display text-6xl sm:text-8xl md:text-9xl text-[#311e0c]/[0.03] uppercase tracking-widest">
-        Cucina Italiana
-      </div>
-
-      {/* 3. Basil Leaf - Left Side near Features */}
-      <div className="absolute top-[35%] left-[-20px] sm:left-[3%] rotate-[-25deg] opacity-[0.06]">
-        <svg viewBox="0 0 80 100" width="100" height="125" fill="none" stroke="#311e0c" strokeWidth="1.5">
-          <path d="M40 90 Q30 50 40 10 Q50 50 40 90" />
-          <path d="M40 90 C10 70 10 35 40 10 C70 35 70 70 40 90 Z" />
-          <path d="M40 65 Q25 55 15 52" />
-          <path d="M40 50 Q55 40 65 37" />
-          <path d="M40 40 Q25 30 18 25" />
-          <path d="M40 25 Q55 18 60 14" />
-        </svg>
-      </div>
-
-      {/* 4. Farfalle Pasta - Right Side near Features bottom */}
-      <div className="absolute top-[48%] right-[4%] rotate-[18deg] opacity-[0.06]">
-        <svg viewBox="0 0 60 50" width="96" height="80" fill="none" stroke="#311e0c" strokeWidth="1.5">
-          <path d="M10 12 C15 17, 24 22, 30 25 C36 22, 45 17, 50 12 L50 38 C45 33, 36 28, 30 25 C24 28, 15 33, 10 38 Z" />
-          <path d="M30 12 L30 38" />
-          <path d="M10 12 L8 15 L10 18 L8 21 L10 24 L8 27 L10 30 L8 33 L10 36 L8 38" />
-          <path d="M50 12 L52 15 L50 18 L52 21 L50 24 L52 27 L50 30 L52 33 L50 36 L52 38" />
-        </svg>
-      </div>
-
-      {/* 5. Faint Text - Pasta Fresca */}
-      <div className="absolute top-[58%] right-[5%] rotate-6 font-display text-6xl sm:text-8xl md:text-9xl text-[#311e0c]/[0.03] uppercase tracking-widest">
-        Pasta Fresca
-      </div>
-
-      {/* 6. Tomato / Pomodoro - Left Side near Menu */}
-      <div className="absolute top-[65%] left-[4%] rotate-[15deg] opacity-[0.06]">
-        <svg viewBox="0 0 100 100" width="110" height="110" fill="none" stroke="#311e0c" strokeWidth="1.5">
-          <path d="M50 20 C25 20 15 35 15 55 C15 75 30 85 50 85 C70 85 85 75 85 55 C85 35 75 20 50 20 Z" />
-          <path d="M50 20 Q48 10 50 5 Q52 10 50 20" />
-          <path d="M50 20 Q40 15 35 15 Q45 22 50 20" />
-          <path d="M50 20 Q60 15 65 15 Q55 22 50 20" />
-        </svg>
-      </div>
-
-      {/* 7. Chef Hat - Right Side near Parallax */}
-      <div className="absolute top-[76%] right-[3%] rotate-[-12deg] opacity-[0.06]">
-        <svg viewBox="0 0 100 100" width="120" height="120" fill="none" stroke="#311e0c" strokeWidth="1.5">
-          <path d="M30 70 L70 70 L70 85 L30 85 Z" />
-          <path d="M30 70 C20 70 15 55 25 45 C15 35 30 20 50 30 C70 20 85 35 75 45 C85 55 80 70 70 70" />
-        </svg>
-      </div>
-
-      {/* 8. Faint Text - Forno a Legna */}
-      <div className="absolute top-[82%] left-[8%] -rotate-6 font-display text-6xl sm:text-8xl md:text-9xl text-[#311e0c]/[0.03] uppercase tracking-widest">
-        Forno a Legna
-      </div>
-
-      {/* 9. Olive Branch - Left Side near Testimonials */}
-      <div className="absolute top-[90%] left-[-30px] sm:left-[2%] rotate-[15deg] opacity-[0.06]">
-        <svg viewBox="0 0 100 200" width="130" height="260" fill="none" stroke="#311e0c" strokeWidth="1.5">
-          <path d="M50 10 Q60 50 50 190" />
-          <path d="M50 30 Q30 20 25 35 Q40 45 50 42" />
-          <path d="M50 45 Q70 35 75 50 Q60 60 50 57" />
-          <path d="M50 70 Q25 60 20 75 Q35 85 50 82" />
-          <path d="M50 85 Q75 75 80 90 Q65 100 50 97" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
 /* ─────────────── PAGE ─────────────── */
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -785,7 +701,7 @@ export default function LandingPage() {
           transition={{ duration: 1 }}
           className="relative min-h-screen bg-background overflow-x-hidden"
         >
-          <GlobalItalianBackground />
+          <GlobalItalianBackground page="landing" />
           <Navbar />
           <ScrollCanvas />
           <MarqueeBanner />
