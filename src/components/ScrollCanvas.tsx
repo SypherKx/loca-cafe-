@@ -19,88 +19,87 @@ export default function ScrollCanvas() {
     const container = containerRef.current;
     if (!video || !container) return;
 
+    // Standard video configuration for scroll-scrubbing
     video.muted = true;
     video.playsInline = true;
+    video.controls = false;
+    video.pause();
 
-    // Smooth video seeking variables
-    let targetTime = 0;
-    let actualTime = 0;
-    const ease = 0.08; // Interpolation factor (higher = faster response, lower = smoother seeking)
+    let tl: gsap.core.Timeline | null = null;
 
-    // GSAP ScrollTrigger timeline
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: container,
-        start: 'top top',
-        end: '+=300%', // Pin screen height for 3 viewports
-        scrub: 1, // Smoother timelines
-        pin: true,
-        anticipatePin: 1,
-      },
-    });
+    const setupTimeline = () => {
+      const duration = video.duration;
+      if (!duration || isNaN(duration)) return;
 
-    const scrollProgress = { value: 0 };
-    tl.to(scrollProgress, {
-      value: 1,
-      ease: 'none',
-      duration: 3,
-      onUpdate: () => {
-        if (video.duration) {
-          targetTime = scrollProgress.value * video.duration;
-        }
-      },
-    });
+      // Reset video start position
+      video.currentTime = 0;
 
-    // Initial CTA animation — fade out and move up as we scroll
-    const initialCTA = initialCTARef.current;
-    if (initialCTA) {
-      tl.to(initialCTA, {
-        opacity: 0,
-        y: -150,
-        duration: 0.8,
-        ease: 'power2.inOut',
+      // GSAP ScrollTrigger timeline
+      tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: container,
+          start: 'top top',
+          end: '+=300%', // Pin screen height for 3 viewports
+          scrub: 1.5, // Eased scrub timing
+          pin: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      // Animate video playback currentTime directly on the timeline
+      tl.to(video, {
+        currentTime: duration,
+        ease: 'none',
+        duration: 3,
       }, 0);
-    }
 
-    // Overlay animations — fade in main content as we scroll further
-    const overlay = overlayRef.current;
-    if (overlay) {
-      gsap.set(overlay, { opacity: 0 });
-
-      tl.to(overlay, {
-        opacity: 1,
-        duration: 0.8,
-        ease: 'power2.out',
-      }, 0.8);
-
-      const textEls = overlay.querySelectorAll('.hero-animate');
-      gsap.set(textEls, { y: 60, opacity: 0 });
-      tl.to(textEls, {
-        y: 0,
-        opacity: 1,
-        stagger: 0.15,
-        duration: 0.6,
-        ease: 'power3.out',
-      }, 1.0);
-    }
-
-    // requestAnimationFrame loop to smoothly interpolate (lerp) video seeking
-    let animationFrameId: number;
-    const updateLoop = () => {
-      if (Math.abs(actualTime - targetTime) > 0.001) {
-        actualTime = actualTime + (targetTime - actualTime) * ease;
-        if (video.duration) {
-          if (actualTime < 0) actualTime = 0;
-          if (actualTime > video.duration) actualTime = video.duration;
-          video.currentTime = actualTime;
-        }
+      // Initial CTA animation — fade out and move up as we scroll
+      const initialCTA = initialCTARef.current;
+      if (initialCTA) {
+        tl.to(initialCTA, {
+          opacity: 0,
+          y: -150,
+          duration: 0.8,
+          ease: 'power2.inOut',
+        }, 0);
       }
-      animationFrameId = requestAnimationFrame(updateLoop);
+
+      // Overlay animations — fade in main content as we scroll further
+      const overlay = overlayRef.current;
+      if (overlay) {
+        gsap.set(overlay, { opacity: 0 });
+
+        tl.to(overlay, {
+          opacity: 1,
+          duration: 0.8,
+          ease: 'power2.out',
+        }, 0.8);
+
+        const textEls = overlay.querySelectorAll('.hero-animate');
+        gsap.set(textEls, { y: 60, opacity: 0 });
+        tl.to(textEls, {
+          y: 0,
+          opacity: 1,
+          stagger: 0.15,
+          duration: 0.6,
+          ease: 'power3.out',
+        }, 1.0);
+      }
     };
-    animationFrameId = requestAnimationFrame(updateLoop);
+
+    // If metadata is already loaded (from preloader cache), init immediately
+    if (video.readyState >= 1) {
+      setupTimeline();
+    } else {
+      video.addEventListener('loadedmetadata', setupTimeline);
+    }
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      video.removeEventListener('loadedmetadata', setupTimeline);
+      if (tl) {
+        tl.kill();
+      }
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, []);
