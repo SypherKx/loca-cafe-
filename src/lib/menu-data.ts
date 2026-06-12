@@ -5,16 +5,16 @@ import icedCoffee from '@/assets/iced-coffee.jpg';
 import croissant from '@/assets/croissant.jpg';
 
 // Menu Assets
-import sandwichImg from '@/assets/menu/sandwich.png';
-import waffleImg from '@/assets/menu/waffle.png';
-import frappeImg from '@/assets/menu/frappe.png';
-import mojitoImg from '@/assets/menu/mojito.png';
+import sandwichImg from '@/assets/menu/sandwich.webp';
+import waffleImg from '@/assets/menu/waffle.webp';
+import frappeImg from '@/assets/menu/frappe.webp';
+import mojitoImg from '@/assets/menu/mojito.webp';
 
 // New Food Assets
-import pizzaImg from '@/assets/menu/pizza.png';
-import pastaImg from '@/assets/menu/pasta.png';
-import soupImg from '@/assets/menu/soup.png';
-import mocktailImg from '@/assets/menu/mocktail.png';
+import pizzaImg from '@/assets/menu/pizza.webp';
+import pastaImg from '@/assets/menu/pasta.webp';
+import soupImg from '@/assets/menu/soup.webp';
+import mocktailImg from '@/assets/menu/mocktail.webp';
 
 import { MenuItem } from './store';
 

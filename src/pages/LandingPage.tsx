@@ -9,12 +9,12 @@ import Footer from '@/components/Footer';
 import ScrollCanvas from '@/components/ScrollCanvas';
 import GlobalItalianBackground from '@/components/GlobalItalianBackground';
 import heroCoffee from '@/assets/hero-coffee.jpg';
-import pizzaOven from '@/assets/pizza-oven.png';
+import pizzaOven from '@/assets/pizza-oven.webp';
 import cafeInterior from '@/assets/cafe-interior.jpg';
-import pizzaImg from '@/assets/menu/pizza.png';
-import pastaImg from '@/assets/menu/pasta.png';
-import soupImg from '@/assets/menu/soup.png';
-import mocktailImg from '@/assets/menu/mocktail.png';
+import pizzaImg from '@/assets/menu/pizza.webp';
+import pastaImg from '@/assets/menu/pasta.webp';
+import soupImg from '@/assets/menu/soup.webp';
+import mocktailImg from '@/assets/menu/mocktail.webp';
 
 function FadeIn({ children, className = '', delay = 0, direction = 'up' }: {
   children: React.ReactNode; className?: string; delay?: number; direction?: 'up' | 'left' | 'right' | 'none';

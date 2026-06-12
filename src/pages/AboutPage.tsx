@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import GlobalItalianBackground from '@/components/GlobalItalianBackground';
 import cafeInterior from '@/assets/cafe-interior.jpg';
-import handmadePasta from '@/assets/handmade-pasta.png';
+import handmadePasta from '@/assets/handmade-pasta.webp';
 
 function FadeIn({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef(null);
