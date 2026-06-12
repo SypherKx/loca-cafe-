@@ -240,7 +240,7 @@ function MarqueeBanner() {
 /* ─────────────── PHILOSOPHY ─────────────── */
 function PhilosophySection() {
   return (
-    <section className="py-28 lg:py-36 relative overflow-hidden">
+    <section className="py-16 lg:py-20 relative overflow-hidden">
       <div className="absolute top-20 right-0 w-[400px] h-[400px] blob-2 bg-accent/3 animate-drift pointer-events-none" />
 
       <div className="container mx-auto px-4 lg:px-8">
@@ -380,7 +380,7 @@ function FeaturesSection() {
   ];
 
   return (
-    <section className="py-28 lg:py-36 section-flow relative">
+    <section className="py-16 lg:py-20 section-flow relative">
       <ItalianCulinaryTrail />
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
         <FadeIn className="max-w-xl mb-20">
@@ -423,7 +423,7 @@ function FeaturedMenuSection() {
   ];
 
   return (
-    <section className="py-28 lg:py-36 relative overflow-hidden">
+    <section className="py-16 lg:py-20 relative overflow-hidden">
       <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] blob bg-accent/3 animate-drift pointer-events-none" />
 
       <div className="container mx-auto px-4 lg:px-8">
@@ -513,7 +513,7 @@ function ExperienceSection() {
         <div className="absolute inset-0 bg-background/75 backdrop-blur-[2px]" />
       </motion.div>
 
-      <motion.div style={{ y: textY }} className="relative z-10 container mx-auto px-4 lg:px-8 py-28">
+      <motion.div style={{ y: textY }} className="relative z-10 container mx-auto px-4 lg:px-8 py-16">
         <div className="max-w-2xl">
           <FadeIn>
             <p className="text-accent text-xs font-medium tracking-[0.25em] uppercase mb-6">The Space</p>
@@ -545,7 +545,7 @@ function TestimonialsSection() {
   ];
 
   return (
-    <section className="py-28 lg:py-36 section-flow">
+    <section className="py-16 lg:py-20 section-flow">
       <div className="container mx-auto px-4 lg:px-8">
         <FadeIn className="text-center mb-20">
           <p className="text-accent text-xs font-medium tracking-[0.25em] uppercase mb-4">Kind Words</p>
@@ -582,7 +582,7 @@ function TestimonialsSection() {
 /* ─────────────── LOCATION ─────────────── */
 function LocationSection() {
   return (
-    <section className="py-28 lg:py-36 relative overflow-hidden">
+    <section className="py-16 lg:py-20 relative overflow-hidden">
       <div className="absolute top-10 -right-10 w-[250px] h-[250px] blob-3 bg-accent/3 animate-drift pointer-events-none" />
 
       <div className="container mx-auto px-4 lg:px-8">
@@ -658,7 +658,7 @@ function LocationSection() {
 /* ─────────────── FINAL CTA ─────────────── */
 function CTASection() {
   return (
-    <section className="relative py-32 overflow-hidden">
+    <section className="relative py-20 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-warm" />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-[400px] h-[400px] blob bg-accent/10 animate-drift" />

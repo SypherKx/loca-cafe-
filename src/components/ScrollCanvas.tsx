@@ -19,7 +19,7 @@ export default function ScrollCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const initialCTARef = useRef<HTMLDivElement>(null);
-  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   const frameIndexRef = useRef({ value: 0 });
 
   useEffect(() => {
@@ -30,13 +30,12 @@ export default function ScrollCanvas() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Pre-load all frames
-    const images: HTMLImageElement[] = [];
-    let loadedCount = 0;
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const images: (HTMLImageElement | null)[] = Array(FRAME_COUNT).fill(null);
 
-    // Adaptive resolution based on device — cap at 2x to avoid memory pressure on high-DPI mobile screens
+    // Adaptive resolution based on device — cap at 1.2x on mobile for high speed, and 2x on desktop
     const setCanvasSize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2); 
+      const dpr = isMobile ? 1.2 : Math.min(window.devicePixelRatio || 1, 2); 
       const w = window.innerWidth;
       const h = window.innerHeight;
 
@@ -47,13 +46,34 @@ export default function ScrollCanvas() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'medium'; // Medium is often faster for mobile while maintaining quality
+      ctx.imageSmoothingQuality = isMobile ? 'low' : 'medium'; // Low quality improves mobile FPS significantly
     };
     setCanvasSize();
 
     const renderFrame = (index: number) => {
-      const img = images[index];
-      if (!img || !img.complete) return;
+      let img = images[index];
+      
+      // Fallback: If target image is not loaded yet, find the nearest loaded one in a window of 20 frames
+      if (!img || !img.complete) {
+        let fallbackImg = null;
+        for (let offset = 1; offset <= 20; offset++) {
+          const prevIdx = index - offset;
+          if (prevIdx >= 0 && images[prevIdx] && images[prevIdx]!.complete) {
+            fallbackImg = images[prevIdx];
+            break;
+          }
+          const nextIdx = index + offset;
+          if (nextIdx < FRAME_COUNT && images[nextIdx] && images[nextIdx]!.complete) {
+            fallbackImg = images[nextIdx];
+            break;
+          }
+        }
+        if (fallbackImg) {
+          img = fallbackImg;
+        } else {
+          return; // No fallback image found, retain current canvas frame
+        }
+      }
 
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -79,55 +99,73 @@ export default function ScrollCanvas() {
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
     };
 
-    // Prioritized pre-loading and decoding
-    const loadImages = async () => {
-      // Create empty slots
-      for (let i = 0; i < FRAME_COUNT; i++) {
-        images[i] = new Image();
+    // Virtualized loading window - only keep frames near the active index loaded
+    const frameObj = frameIndexRef.current;
+    const manageFrames = (current: number) => {
+      const PRE_WINDOW = isMobile ? 12 : 20;
+      const POST_WINDOW = isMobile ? 24 : 35;
+      
+      const start = Math.max(0, current - PRE_WINDOW);
+      const end = Math.min(FRAME_COUNT - 1, current + POST_WINDOW);
+
+      // Load frames inside sliding window
+      for (let i = start; i <= end; i++) {
+        if (!images[i]) {
+          const img = new Image();
+          images[i] = img;
+          img.onload = () => {
+            const activeFrame = Math.round(frameObj.value);
+            if (activeFrame === i) {
+              renderFrame(i);
+            }
+          };
+          img.src = currentFrame(i);
+        }
       }
 
-      // Load first 24 frames with highest priority to match Preloader
-      // This ensures that when the loader disappears, the start of the animation is buttery smooth
-      const CRITICAL_FRAMES = 24;
-      const priorityPromises = Array.from({ length: CRITICAL_FRAMES }).map((_, i) => {
+      // Unload frames outside sliding window to free up GPU memory
+      for (let i = 0; i < FRAME_COUNT; i++) {
+        if ((i < start || i > end) && images[i]) {
+          // Retain first 30 frames near top for instant load back
+          if (current < 15 && i < 30) {
+            continue;
+          }
+          images[i]!.onload = null;
+          images[i]!.src = ''; // Deallocates GPU memory in most browsers
+          images[i] = null;
+        }
+      }
+    };
+
+    // Prioritized pre-loading and decoding of first 30 critical frames
+    const loadInitialImages = async () => {
+      const INITIAL_LOAD = 30;
+      const priorityPromises = Array.from({ length: INITIAL_LOAD }).map((_, i) => {
         return new Promise<void>((resolve) => {
-          images[i].src = currentFrame(i);
-          images[i].onload = () => {
+          const img = new Image();
+          images[i] = img;
+          img.onload = () => {
             if (i === 0) renderFrame(0);
-            images[i].decode().then(() => resolve()).catch(() => resolve());
+            img.decode().then(() => resolve()).catch(() => resolve());
           };
-          images[i].onerror = () => resolve();
+          img.onerror = () => resolve();
+          img.src = currentFrame(i);
         });
       });
 
       await Promise.all(priorityPromises);
-
-      // Load the rest in optimized batches
-      const batchSize = 30;
-      for (let i = CRITICAL_FRAMES; i < FRAME_COUNT; i += batchSize) {
-        const batchPromises = [];
-        for (let j = i; j < Math.min(i + batchSize, FRAME_COUNT); j++) {
-          images[j].src = currentFrame(j);
-          // We don't strictly await EVERY batch to keep the UI fluid, 
-          // but we give them a chance to start.
-        }
-        // Small delay to allow browser to handle rendering/scrolling
-        await new Promise(r => setTimeout(r, 60));
-      }
     };
 
-    loadImages();
+    loadInitialImages();
     imagesRef.current = images;
 
     // GSAP ScrollTrigger animation
-    const frameObj = frameIndexRef.current;
-
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container,
         start: 'top top',
-        end: '+=300%',
-        scrub: 1, // Smoother scrub
+        end: '+=150%',
+        scrub: isMobile ? 0.5 : 1, // responsive snappiness on mobile
         pin: true,
         anticipatePin: 1,
       },
@@ -140,7 +178,9 @@ export default function ScrollCanvas() {
       duration: 3,
       snap: { value: 1 },
       onUpdate: () => {
-        renderFrame(Math.round(frameObj.value));
+        const current = Math.round(frameObj.value);
+        manageFrames(current);
+        renderFrame(current);
       },
     });
 
@@ -180,8 +220,13 @@ export default function ScrollCanvas() {
       }, 1.0);
     }
 
-    // Handle resize
+    // Handle resize - ignore mobile toolbar height-resize trigger to prevent canvas stutter
+    let lastWidth = window.innerWidth;
     const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      if (isMobile && currentWidth === lastWidth) return;
+      lastWidth = currentWidth;
+
       setCanvasSize();
       renderFrame(Math.round(frameObj.value));
     };
