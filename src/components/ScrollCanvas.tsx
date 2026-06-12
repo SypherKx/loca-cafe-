@@ -31,7 +31,10 @@ export default function ScrollCanvas() {
     if (!ctx) return;
 
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const supportsBitmap = typeof window.createImageBitmap === 'function';
+    
     const images: (HTMLImageElement | null)[] = Array(FRAME_COUNT).fill(null);
+    const bitmaps: (ImageBitmap | null)[] = Array(FRAME_COUNT).fill(null);
 
     // Adaptive resolution based on device — cap at 1.2x on mobile for high speed, and 2x on desktop
     const setCanvasSize = () => {
@@ -50,37 +53,30 @@ export default function ScrollCanvas() {
     };
     setCanvasSize();
 
-    const renderFrame = (index: number) => {
-      let img = images[index];
-      
-      // Fallback: If target image is not loaded yet, find the nearest loaded one in a window of 20 frames
-      if (!img || !img.complete) {
-        let fallbackImg = null;
-        for (let offset = 1; offset <= 20; offset++) {
-          const prevIdx = index - offset;
-          if (prevIdx >= 0 && images[prevIdx] && images[prevIdx]!.complete) {
-            fallbackImg = images[prevIdx];
-            break;
-          }
-          const nextIdx = index + offset;
-          if (nextIdx < FRAME_COUNT && images[nextIdx] && images[nextIdx]!.complete) {
-            fallbackImg = images[nextIdx];
-            break;
-          }
-        }
-        if (fallbackImg) {
-          img = fallbackImg;
-        } else {
-          return; // No fallback image found, retain current canvas frame
-        }
-      }
+    const isLoaded = (idx: number) => {
+      if (supportsBitmap && bitmaps[idx]) return true;
+      const img = images[idx];
+      return !!(img && img.complete);
+    };
 
+    const getDrawable = (idx: number) => {
+      if (supportsBitmap && bitmaps[idx]) return bitmaps[idx];
+      const img = images[idx];
+      if (img && img.complete) return img;
+      return null;
+    };
+
+    const drawToCanvas = (drawable: CanvasImageSource) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
 
       ctx.clearRect(0, 0, w, h);
 
-      const imgRatio = img.naturalWidth / img.naturalHeight;
+      // Extract original size from the ImageBitmap or HTMLImageElement
+      const naturalWidth = (drawable instanceof ImageBitmap) ? drawable.width : (drawable as HTMLImageElement).naturalWidth;
+      const naturalHeight = (drawable instanceof ImageBitmap) ? drawable.height : (drawable as HTMLImageElement).naturalHeight;
+
+      const imgRatio = naturalWidth / naturalHeight;
       const canvasRatio = w / h;
 
       let drawW: number, drawH: number, drawX: number, drawY: number;
@@ -96,7 +92,35 @@ export default function ScrollCanvas() {
         drawY = 0;
       }
 
-      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      ctx.drawImage(drawable, drawX, drawY, drawW, drawH);
+    };
+
+    const renderFrame = (index: number) => {
+      let drawable = getDrawable(index);
+      
+      // Fallback: If target image/bitmap is not loaded yet, find the nearest loaded one in a window of 20 frames
+      if (!drawable) {
+        let fallbackDrawable = null;
+        for (let offset = 1; offset <= 20; offset++) {
+          const prevIdx = index - offset;
+          if (prevIdx >= 0 && isLoaded(prevIdx)) {
+            fallbackDrawable = getDrawable(prevIdx);
+            break;
+          }
+          const nextIdx = index + offset;
+          if (nextIdx < FRAME_COUNT && isLoaded(nextIdx)) {
+            fallbackDrawable = getDrawable(nextIdx);
+            break;
+          }
+        }
+        if (fallbackDrawable) {
+          drawable = fallbackDrawable;
+        } else {
+          return; // No fallback found, retain current canvas frame
+        }
+      }
+
+      drawToCanvas(drawable);
     };
 
     // Virtualized loading window - only keep frames near the active index loaded
@@ -114,9 +138,24 @@ export default function ScrollCanvas() {
           const img = new Image();
           images[i] = img;
           img.onload = () => {
-            const activeFrame = Math.round(frameObj.value);
-            if (activeFrame === i) {
-              renderFrame(i);
+            if (supportsBitmap) {
+              createImageBitmap(img).then(bitmap => {
+                bitmaps[i] = bitmap;
+                const activeFrame = Math.round(frameObj.value);
+                if (activeFrame === i) {
+                  latestTargetFrame = i;
+                }
+              }).catch(() => {
+                const activeFrame = Math.round(frameObj.value);
+                if (activeFrame === i) {
+                  latestTargetFrame = i;
+                }
+              });
+            } else {
+              const activeFrame = Math.round(frameObj.value);
+              if (activeFrame === i) {
+                latestTargetFrame = i;
+              }
             }
           };
           img.src = currentFrame(i);
@@ -130,8 +169,15 @@ export default function ScrollCanvas() {
           if (current < 15 && i < 30) {
             continue;
           }
+          
+          // Close ImageBitmap to free GPU texture memory immediately
+          if (bitmaps[i]) {
+            bitmaps[i]!.close();
+            bitmaps[i] = null;
+          }
+
           images[i]!.onload = null;
-          images[i]!.src = ''; // Deallocates GPU memory in most browsers
+          images[i]!.src = ''; // Deallocates image memory in most browsers
           images[i] = null;
         }
       }
@@ -145,8 +191,30 @@ export default function ScrollCanvas() {
           const img = new Image();
           images[i] = img;
           img.onload = () => {
-            if (i === 0) renderFrame(0);
-            img.decode().then(() => resolve()).catch(() => resolve());
+            if (i === 0) {
+              if (supportsBitmap) {
+                createImageBitmap(img).then(bitmap => {
+                  bitmaps[0] = bitmap;
+                  renderFrame(0);
+                  resolve();
+                }).catch(() => {
+                  renderFrame(0);
+                  resolve();
+                });
+              } else {
+                renderFrame(0);
+                resolve();
+              }
+            } else {
+              if (supportsBitmap) {
+                createImageBitmap(img).then(bitmap => {
+                  bitmaps[i] = bitmap;
+                  resolve();
+                }).catch(() => resolve());
+              } else {
+                resolve();
+              }
+            }
           };
           img.onerror = () => resolve();
           img.src = currentFrame(i);
@@ -158,6 +226,20 @@ export default function ScrollCanvas() {
 
     loadInitialImages();
     imagesRef.current = images;
+
+    // Game loop rendering utilizing requestAnimationFrame (RAF) for high-refresh-rate monitors
+    let latestTargetFrame = 0;
+    let currentRenderedFrame = -1;
+    let animationFrameId: number | null = null;
+
+    const tick = () => {
+      if (latestTargetFrame !== currentRenderedFrame) {
+        renderFrame(latestTargetFrame);
+        currentRenderedFrame = latestTargetFrame;
+      }
+      animationFrameId = requestAnimationFrame(tick);
+    };
+    animationFrameId = requestAnimationFrame(tick);
 
     // GSAP ScrollTrigger animation
     const tl = gsap.timeline({
@@ -180,7 +262,7 @@ export default function ScrollCanvas() {
       onUpdate: () => {
         const current = Math.round(frameObj.value);
         manageFrames(current);
-        renderFrame(current);
+        latestTargetFrame = current; // update target for next RAF tick
       },
     });
 
@@ -234,7 +316,17 @@ export default function ScrollCanvas() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
       ScrollTrigger.getAll().forEach(t => t.kill());
+
+      // Explicitly close all remaining ImageBitmaps to prevent memory leaks on navigation
+      if (supportsBitmap) {
+        bitmaps.forEach(bitmap => {
+          if (bitmap) bitmap.close();
+        });
+      }
     };
   }, []);
 
