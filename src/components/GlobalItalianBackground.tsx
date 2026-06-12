@@ -251,33 +251,42 @@ interface BackgroundElement {
 const landingElements: BackgroundElement[] = [
   { component: OliveSprig, className: 'absolute top-[5%] right-[2%] w-36 h-72 rotate-[40deg]', style: { animationDelay: '0s' } },
   { component: BasilLeaves, className: 'absolute top-[12%] left-[3%] w-24 h-24 rotate-[-15deg]', style: { animationDelay: '-1.5s' } },
+  { component: CheeseWedge, className: 'absolute top-[17%] left-[2%] w-20 h-20 rotate-[12deg]', style: { animationDelay: '-1.8s' } },
   { component: WheatStalk, className: 'absolute top-[22%] right-[4%] w-20 h-52 rotate-[12deg]', style: { animationDelay: '-3s' } },
   { component: CherryTomato, className: 'absolute top-[30%] left-[2%] w-20 h-20 rotate-[25deg]', style: { animationDelay: '-4.5s' } },
+  { component: CoffeeBean, className: 'absolute top-[36%] right-[5%] w-16 h-20 rotate-[-15deg]', style: { animationDelay: '-2.9s' } },
   { component: RosemarySprig, className: 'absolute top-[40%] right-[3%] w-16 h-36 rotate-[-18deg]', style: { animationDelay: '-0.8s' } },
   { component: CheeseWedge, className: 'absolute top-[48%] left-[4%] w-24 h-24 rotate-[30deg]', style: { animationDelay: '-2.2s' } },
   { component: ChiliPepper, className: 'absolute top-[58%] right-[5%] w-16 h-24 rotate-[-22deg]', style: { animationDelay: '-5.1s' } },
+  { component: BasilLeaves, className: 'absolute top-[62%] left-[4%] w-24 h-24 rotate-[35deg]', style: { animationDelay: '-3.1s' } },
   { component: LemonSlice, className: 'absolute top-[67%] left-[3%] w-24 h-24 rotate-[15deg]', style: { animationDelay: '-1.2s' } },
   { component: GarlicBulb, className: 'absolute top-[75%] right-[2%] w-20 h-20 rotate-[10deg]', style: { animationDelay: '-3.7s' } },
   { component: CoffeeBean, className: 'absolute top-[83%] left-[4%] w-16 h-20 rotate-[-35deg]', style: { animationDelay: '-2.5s' } },
+  { component: ChiliPepper, className: 'absolute top-[88%] right-[4%] w-16 h-24 rotate-[18deg]', style: { animationDelay: '-0.5s' } },
   { component: OliveSprig, className: 'absolute top-[92%] right-[3%] w-28 h-56 rotate-[28deg]', style: { animationDelay: '-4s' } },
 ];
 
 const menuElements: BackgroundElement[] = [
   { component: BasilLeaves, className: 'absolute top-[4%] left-[2%] w-24 h-24 rotate-[-20deg]', style: { animationDelay: '0s' } },
   { component: CherryTomato, className: 'absolute top-[15%] right-[3%] w-20 h-20 rotate-[15deg]', style: { animationDelay: '-2s' } },
+  { component: CoffeeBean, className: 'absolute top-[22%] left-[4%] w-16 h-20 rotate-[-20deg]', style: { animationDelay: '-1.2s' } },
   { component: WheatStalk, className: 'absolute top-[28%] left-[3%] w-16 h-40 rotate-[10deg]', style: { animationDelay: '-4s' } },
   { component: ChiliPepper, className: 'absolute top-[42%] right-[2%] w-16 h-24 rotate-[-15deg]', style: { animationDelay: '-1.5s' } },
+  { component: OliveSprig, className: 'absolute top-[50%] right-[4%] w-24 h-48 rotate-[15deg]', style: { animationDelay: '-4.1s' } },
   { component: CheeseWedge, className: 'absolute top-[56%] left-[4%] w-24 h-24 rotate-[25deg]', style: { animationDelay: '-3.5s' } },
   { component: GarlicBulb, className: 'absolute top-[70%] right-[3%] w-20 h-20 rotate-[-10deg]', style: { animationDelay: '-5.5s' } },
+  { component: CherryTomato, className: 'absolute top-[76%] left-[3%] w-20 h-20 rotate-[25deg]', style: { animationDelay: '-3.0s' } },
   { component: RosemarySprig, className: 'absolute top-[82%] left-[2%] w-16 h-36 rotate-[18deg]', style: { animationDelay: '-2.5s' } },
   { component: LemonSlice, className: 'absolute top-[93%] right-[2%] w-24 h-24 rotate-[35deg]', style: { animationDelay: '-0.5s' } },
 ];
 
 const aboutElements: BackgroundElement[] = [
   { component: OliveSprig, className: 'absolute top-[8%] right-[4%] w-32 h-64 rotate-[30deg]', style: { animationDelay: '0s' } },
+  { component: ChiliPepper, className: 'absolute top-[15%] left-[2%] w-16 h-24 rotate-[12deg]', style: { animationDelay: '-3.3s' } },
   { component: BasilLeaves, className: 'absolute top-[22%] left-[3%] w-24 h-24 rotate-[-25deg]', style: { animationDelay: '-2.5s' } },
   { component: CoffeeBean, className: 'absolute top-[38%] right-[5%] w-16 h-20 rotate-[15deg]', style: { animationDelay: '-1s' } },
   { component: WheatStalk, className: 'absolute top-[54%] left-[2%] w-18 h-44 rotate-[8deg]', style: { animationDelay: '-4.5s' } },
+  { component: CheeseWedge, className: 'absolute top-[64%] right-[4%] w-24 h-24 rotate-[-15deg]', style: { animationDelay: '-2.2s' } },
   { component: LemonSlice, className: 'absolute top-[70%] right-[3%] w-22 h-22 rotate-[-20deg]', style: { animationDelay: '-3s' } },
   { component: GarlicBulb, className: 'absolute top-[86%] left-[3%] w-20 h-20 rotate-[12deg]', style: { animationDelay: '-1.8s' } },
 ];
