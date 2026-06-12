@@ -38,7 +38,7 @@ export default function ScrollCanvas() {
 
     // Adaptive resolution based on device — cap at 1.2x on mobile for high speed, and 2x on desktop
     const setCanvasSize = () => {
-      const dpr = isMobile ? 1.2 : Math.min(window.devicePixelRatio || 1, 2); 
+      const dpr = isMobile ? 1.2 : Math.min(window.devicePixelRatio || 1, 1.5); 
       const w = window.innerWidth;
       const h = window.innerHeight;
 
@@ -126,8 +126,8 @@ export default function ScrollCanvas() {
     // Virtualized loading window - only keep frames near the active index loaded
     const frameObj = frameIndexRef.current;
     const manageFrames = (current: number) => {
-      const PRE_WINDOW = isMobile ? 12 : 20;
-      const POST_WINDOW = isMobile ? 24 : 35;
+      const PRE_WINDOW = isMobile ? 12 : 30;
+      const POST_WINDOW = isMobile ? 24 : 50;
       
       const start = Math.max(0, current - PRE_WINDOW);
       const end = Math.min(FRAME_COUNT - 1, current + POST_WINDOW);
@@ -253,12 +253,11 @@ export default function ScrollCanvas() {
       },
     });
 
-    // Animate through frames
+    // Animate through frames smoothly without integer snapping
     tl.to(frameObj, {
       value: FRAME_COUNT - 1,
       ease: 'none',
       duration: 3,
-      snap: { value: 1 },
       onUpdate: () => {
         const current = Math.round(frameObj.value);
         manageFrames(current);
@@ -336,7 +335,7 @@ export default function ScrollCanvas() {
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
-        style={{ display: 'block' }}
+        style={{ display: 'block', willChange: 'transform' }}
       />
 
       {/* Dark gradient overlay for text readability */}
