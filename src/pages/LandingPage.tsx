@@ -396,16 +396,16 @@ function FeaturesSection() {
         <div className="space-y-0">
           {features.map((f, i) => (
             <FadeIn key={f.title} delay={i * 0.12}>
-              <div className="group flex flex-col sm:flex-row items-start gap-6 sm:gap-10 py-10 border-b border-border/30 hover:border-accent/30 transition-colors duration-500">
-                <span className="text-xs text-accent/40 font-mono tracking-wider mt-1">{f.num}</span>
-                <div className="w-12 h-12 rounded-2xl bg-accent/5 flex items-center justify-center shrink-0 group-hover:bg-accent/10 transition-colors duration-500">
-                  <f.icon className="w-5 h-5 text-accent" />
+              <div className="group flex flex-row items-start gap-4 sm:gap-10 py-8 border-b border-border/30 hover:border-accent/30 transition-colors duration-500">
+                <span className="text-[10px] sm:text-xs text-accent/40 font-mono tracking-wider mt-1.5 shrink-0">{f.num}</span>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-accent/5 flex items-center justify-center shrink-0 group-hover:bg-accent/10 transition-colors duration-500">
+                  <f.icon className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-display font-semibold mb-2 text-foreground group-hover:text-accent transition-colors duration-500">{f.title}</h3>
-                  <p className="text-muted-foreground font-light leading-relaxed max-w-lg">{f.desc}</p>
+                  <h3 className="text-base sm:text-xl font-display font-semibold mb-1 sm:mb-2 text-foreground group-hover:text-accent transition-colors duration-500">{f.title}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground font-light leading-relaxed max-w-lg">{f.desc}</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-accent group-hover:translate-x-2 transition-all duration-500 hidden sm:block mt-1" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground/30 group-hover:text-accent group-hover:translate-x-2 transition-all duration-500 hidden sm:block mt-1" />
               </div>
             </FadeIn>
           ))}
