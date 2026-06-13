@@ -299,7 +299,7 @@ export default function ScrollCanvas() {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative w-full h-screen overflow-hidden bg-[#1B110A]">
+    <section ref={containerRef} className="relative w-full mobile-fill-viewport overflow-hidden bg-[#1B110A]">
       {/* Canvas for frame animation */}
       <canvas
         ref={canvasRef}

@@ -255,4 +255,9 @@
       text-shadow: 0 0 0px transparent;
     }
   }
+
+  .mobile-fill-viewport {
+    height: 100vh !important;
+    height: 100dvh !important;
+  }
 }
