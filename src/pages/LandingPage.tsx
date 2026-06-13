@@ -206,7 +206,7 @@ function HeroSection() {
             >
               <Button asChild className="flex-1 sm:flex-none text-[15px] font-semibold px-6 sm:px-8 py-7 rounded-full bg-gradient-to-r from-[#D78B5D] to-[#A4532B] text-white hover:opacity-90 border-0 shadow-lg shadow-[#D46B25]/20 transition-all duration-300">
                 <Link to="/menu" className="flex items-center justify-center">
-                  Order Now <ArrowRight className="w-4 h-4 ml-2" />
+                  View Menu <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
               <Button variant="glass" className="flex-1 sm:flex-none text-[15px] font-medium px-6 sm:px-8 py-7 rounded-full border border-white/10 hover:bg-white/5 transition-all duration-300" asChild>

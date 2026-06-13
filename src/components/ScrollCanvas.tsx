@@ -432,7 +432,7 @@ export default function ScrollCanvas() {
                 }}
               >
                 <Link to="/menu" className="flex items-center">
-                  Order Now <ArrowRight className="w-4 h-4 ml-2" />
+                  View Menu <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
               <Button
