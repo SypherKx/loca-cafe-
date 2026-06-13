@@ -1,50 +1,99 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { imageCache } from '@/lib/imageCache';
 
-// We only wait for the first few frames to ensure the animation starts smoothly
-// The rest will continue loading in the background within the ScrollCanvas
-const CRITICAL_FRAME_COUNT = 48; 
-const frameUrls = Array.from({ length: CRITICAL_FRAME_COUNT }).map((_, i) => 
-  `/frames_webp/frame_${String(Math.min(i * 4, 191)).padStart(5, '0')}.webp`
-);
+const FRAME_COUNT = 48;
+const CRITICAL_FRAME_COUNT = 8;
 
-const staticAssets = [
-  '/logo.png',
-];
+const getFrameUrl = (i: number) => 
+  `/frames_webp/frame_${String(Math.min(i * 4, 191)).padStart(5, '0')}.webp`;
+
+const staticAssets = ['/logo.png'];
 
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
   const [progress, setProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    let loadedCount = 0;
-    const allAssets = [...frameUrls, ...staticAssets];
-    const totalAssets = allAssets.length;
+    let loadedCriticalCount = 0;
+    
+    // Divide frames into critical (blocking) and background (progressive)
+    const criticalFrameUrls = Array.from({ length: CRITICAL_FRAME_COUNT }).map((_, i) => getFrameUrl(i));
+    const backgroundFrameUrls = Array.from({ length: FRAME_COUNT - CRITICAL_FRAME_COUNT }).map((_, i) => 
+      getFrameUrl(i + CRITICAL_FRAME_COUNT)
+    );
 
-    if (totalAssets === 0) {
-      onComplete();
-      return;
-    }
+    const blockingAssets = [...criticalFrameUrls, ...staticAssets];
+    const totalBlocking = blockingAssets.length;
 
-    const updateProgress = () => {
-      loadedCount++;
-      const currentProgress = Math.round((loadedCount / totalAssets) * 100);
-      setProgress(currentProgress);
+    let hasCompleted = false;
 
-      if (loadedCount === totalAssets) {
+    const checkComplete = () => {
+      if (loadedCriticalCount === totalBlocking && !hasCompleted) {
+        hasCompleted = true;
         setTimeout(() => {
           setIsExiting(true);
           setTimeout(onComplete, 600);
-        }, 400);
+        }, 300);
       }
     };
 
-    allAssets.forEach((url) => {
+    const updateProgress = () => {
+      loadedCriticalCount++;
+      const currentProgress = Math.min(100, Math.round((loadedCriticalCount / totalBlocking) * 100));
+      setProgress(currentProgress);
+      checkComplete();
+    };
+
+    // 1. Load critical blocking assets (critical frames + logo)
+    blockingAssets.forEach((url, index) => {
+      const isFrame = url.includes('/frames_webp/');
+      const frameIdx = isFrame ? index : -1;
+
+      // If already cached in memory, count it immediately
+      if (isFrame && imageCache.images[frameIdx]) {
+        updateProgress();
+        return;
+      }
+
       const img = new Image();
+      img.onload = () => {
+        if (isFrame) {
+          imageCache.images[frameIdx] = img;
+        }
+        updateProgress();
+      };
+      img.onerror = () => {
+        updateProgress();
+      };
       img.src = url;
-      img.onload = updateProgress;
-      img.onerror = updateProgress;
     });
+
+    // 2. Load background assets progressively to prevent layout choking
+    const loadBackground = async () => {
+      // Yield to let critical animation/loads complete
+      await new Promise(r => setTimeout(r, 200));
+
+      for (let i = 0; i < backgroundFrameUrls.length; i++) {
+        const frameIdx = i + CRITICAL_FRAME_COUNT;
+        const url = backgroundFrameUrls[i];
+
+        if (imageCache.images[frameIdx]) continue; // Already loaded
+
+        const img = new Image();
+        img.onload = () => {
+          imageCache.images[frameIdx] = img;
+        };
+        img.src = url;
+
+        // Yield execution to the browser thread after every few items
+        if (i % 3 === 0) {
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+    };
+
+    loadBackground();
   }, [onComplete]);
 
   return (

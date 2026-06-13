@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { imageCache } from '@/lib/imageCache';
+
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -34,8 +36,8 @@ export default function ScrollCanvas() {
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const supportsBitmap = typeof window.createImageBitmap === 'function';
     
-    const images: (HTMLImageElement | null)[] = Array(FRAME_COUNT).fill(null);
-    const bitmaps: (ImageBitmap | null)[] = Array(FRAME_COUNT).fill(null);
+    const images = imageCache.images;
+    const bitmaps = imageCache.bitmaps;
 
     // Adaptive resolution based on device — cap at 1.2x on mobile for high speed, and 2x on desktop
     const setCanvasSize = () => {
@@ -70,8 +72,6 @@ export default function ScrollCanvas() {
     const drawToCanvas = (drawable: CanvasImageSource) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-
-      ctx.clearRect(0, 0, w, h);
 
       // Extract original size from the ImageBitmap or HTMLImageElement
       const naturalWidth = (drawable instanceof ImageBitmap) ? drawable.width : (drawable as HTMLImageElement).naturalWidth;
@@ -124,54 +124,76 @@ export default function ScrollCanvas() {
       drawToCanvas(drawable);
     };
 
-    // Since all 48 frames are pre-loaded on startup, we do not need dynamic scroll-time allocation
     const frameObj = frameIndexRef.current;
     const manageFrames = (current: number) => {
-      // No-op: All frames remain in memory for instant 0ms latency scrubbing
+      // No-op: All frames remain in memory
     };
 
-    // Prioritized pre-loading and decoding of all 48 frames
-    const loadInitialImages = async () => {
-      const INITIAL_LOAD = 48;
-      const priorityPromises = Array.from({ length: INITIAL_LOAD }).map((_, i) => {
+    // Load remaining frames and decode them progressively in small batches
+    const loadRemainingImagesAndBitmaps = async () => {
+      const firstBatch = 8;
+      
+      const decodeOrLoad = (i: number) => {
         return new Promise<void>((resolve) => {
-          const img = new Image();
-          images[i] = img;
-          img.onload = () => {
-            if (i === 0) {
-              if (supportsBitmap) {
-                createImageBitmap(img).then(bitmap => {
-                  bitmaps[0] = bitmap;
-                  renderFrame(0);
-                  resolve();
-                }).catch(() => {
-                  renderFrame(0);
-                  resolve();
-                });
-              } else {
-                renderFrame(0);
+          if (bitmaps[i]) {
+            resolve();
+            return;
+          }
+
+          const onImageReady = (imgEl: HTMLImageElement) => {
+            if (supportsBitmap) {
+              createImageBitmap(imgEl).then(bitmap => {
+                bitmaps[i] = bitmap;
+                if (i === 0) renderFrame(0);
                 resolve();
-              }
+              }).catch(() => {
+                if (i === 0) renderFrame(0);
+                resolve();
+              });
             } else {
-              if (supportsBitmap) {
-                createImageBitmap(img).then(bitmap => {
-                  bitmaps[i] = bitmap;
-                  resolve();
-                }).catch(() => resolve());
-              } else {
-                resolve();
-              }
+              if (i === 0) renderFrame(0);
+              resolve();
             }
           };
-          img.onerror = () => resolve();
-          img.src = currentFrame(i);
-        });
-      });
 
-      await Promise.all(priorityPromises);
+          const existingImg = images[i];
+          if (existingImg && existingImg.complete) {
+            onImageReady(existingImg);
+          } else {
+            const img = existingImg || new Image();
+            images[i] = img;
+            img.onload = () => {
+              onImageReady(img);
+            };
+            img.onerror = () => resolve();
+            if (!existingImg) {
+              img.src = currentFrame(i);
+            }
+          }
+        });
+      };
+
+      // Load/decode first batch immediately for instant page mount draw
+      const firstPromises = [];
+      for (let i = 0; i < Math.min(firstBatch, FRAME_COUNT); i++) {
+        firstPromises.push(decodeOrLoad(i));
+      }
+      await Promise.all(firstPromises);
+      renderFrame(0);
+
+      // Load remaining progressively in small batches of 4 with a 60ms delay
+      const batchSize = 4;
+      for (let i = firstBatch; i < FRAME_COUNT; i += batchSize) {
+        await new Promise(r => setTimeout(r, 60));
+        const batchPromises = [];
+        for (let j = 0; j < batchSize && (i + j) < FRAME_COUNT; j++) {
+          batchPromises.push(decodeOrLoad(i + j));
+        }
+        await Promise.all(batchPromises);
+      }
     };
 
-    loadInitialImages();
+    loadRemainingImagesAndBitmaps();
     imagesRef.current = images;
 
     // Game loop rendering utilizing requestAnimationFrame (RAF) for high-refresh-rate monitors

@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import GlobalItalianBackground from '@/components/GlobalItalianBackground';
-import { menuItems } from '@/lib/menu-data';
 import type { MenuItem } from '@/lib/store';
 
 const categories = [
@@ -23,8 +22,30 @@ const categories = [
 ] as const;
 
 export default function MenuPage() {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
+    const cached = localStorage.getItem('luca_menu_items');
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        console.error('Failed to parse cached menu items:', e);
+      }
+    }
+    return [];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('');
+
+  useEffect(() => {
+    if (menuItems.length === 0) {
+      import('@/lib/menu-data').then(({ menuItems: staticItems }) => {
+        setMenuItems(staticItems);
+        if (!localStorage.getItem('luca_menu_items')) {
+          localStorage.setItem('luca_menu_items', JSON.stringify(staticItems));
+        }
+      });
+    }
+  }, [menuItems]);
 
   const query = searchQuery.toLowerCase().trim();
 

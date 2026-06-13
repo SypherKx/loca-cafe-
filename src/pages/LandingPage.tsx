@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from 'framer-motion';
 import Preloader from '@/components/Preloader';
+import LazySection from '@/components/LazySection';
+
 import { Link } from 'react-router-dom';
 import { ArrowRight, Coffee, Leaf, Award, Star, MapPin, Clock, Phone, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -705,13 +707,35 @@ export default function LandingPage() {
           <Navbar />
           <ScrollCanvas />
           <MarqueeBanner />
-          <PhilosophySection />
-          <FeaturesSection />
-          <FeaturedMenuSection />
-          <ExperienceSection />
-          <TestimonialsSection />
-          <LocationSection />
-          <CTASection />
+          
+          <LazySection placeholderHeight="400px">
+            <PhilosophySection />
+          </LazySection>
+
+          <LazySection placeholderHeight="400px">
+            <FeaturesSection />
+          </LazySection>
+
+          <LazySection placeholderHeight="400px">
+            <FeaturedMenuSection />
+          </LazySection>
+
+          <LazySection placeholderHeight="400px">
+            <ExperienceSection />
+          </LazySection>
+
+          <LazySection placeholderHeight="300px">
+            <TestimonialsSection />
+          </LazySection>
+
+          <LazySection placeholderHeight="400px">
+            <LocationSection />
+          </LazySection>
+
+          <LazySection placeholderHeight="300px">
+            <CTASection />
+          </LazySection>
+
           <Footer />
         </motion.div>
       )}
