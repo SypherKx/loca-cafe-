@@ -18,6 +18,11 @@ const queryClient = new QueryClient();
 
 const App = () => {
   useEffect(() => {
+    // Disable native scroll restoration so manual ScrollToTop and GSAP ScrollTrigger work reliably
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
     // Initialize essentials in localStorage on website load
     if (!localStorage.getItem("luca_menu_items")) {
       localStorage.setItem("luca_menu_items", JSON.stringify(menuItems));

@@ -282,17 +282,27 @@ export default function ScrollCanvas() {
     };
     window.addEventListener('resize', handleResize);
 
+    // Refresh ScrollTrigger after a short delay to ensure correct calculations after page navigation/scroll resets
+    const refreshTimeout = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 150);
+
     return () => {
+      clearTimeout(refreshTimeout);
       window.removeEventListener('resize', handleResize);
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      tl.kill();
       ScrollTrigger.getAll().forEach(t => t.kill());
 
-      // Explicitly close all remaining ImageBitmaps to prevent memory leaks on navigation
+      // Explicitly close and nullify all remaining ImageBitmaps to prevent memory leaks and invalid states on navigation
       if (supportsBitmap) {
-        bitmaps.forEach(bitmap => {
-          if (bitmap) bitmap.close();
+        bitmaps.forEach((bitmap, idx) => {
+          if (bitmap) {
+            bitmap.close();
+            bitmaps[idx] = null;
+          }
         });
       }
     };
